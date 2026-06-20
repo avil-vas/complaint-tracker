@@ -1,11 +1,8 @@
-import { useEffect, useState, useContext } from "react"
+import { useEffect, useState } from "react"
 import AdminLayout from "./AdminLayout"
 import { getPriorityClasses, getStatusClasses, normalisePriority, statusOptions } from "./adminTheme"
-import { AuthContext } from "../context/AuthContext"
 
 function ComplaintTable() {
-
-  const { token } = useContext(AuthContext)
 
   const [complaints, setComplaints] = useState([])
   const [query, setQuery] = useState("")
@@ -16,9 +13,7 @@ function ComplaintTable() {
     const res = await fetch(
       "http://localhost:3000/api/complaints/department",
       {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        credentials: "include"
       }
     )
 
@@ -35,9 +30,9 @@ function ComplaintTable() {
       {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
+        credentials: "include",
         body: JSON.stringify({ status })
       }
     )
@@ -47,10 +42,8 @@ function ComplaintTable() {
   }
 
   useEffect(() => {
-    if (token) {
-      fetchComplaints()
-    }
-  }, [token])
+    fetchComplaints()
+  }, [])
 
   const filteredComplaints = complaints.filter((complaint) => {
     const matchesStatus = activeStatus === "All" || complaint.status === activeStatus

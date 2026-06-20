@@ -1,8 +1,6 @@
-import { useState, useContext } from "react"
-import { AuthContext } from "../context/AuthContext"
+import { useState } from "react"
 
 function SubmitComplaint({ refresh }) {
-  const { token } = useContext(AuthContext)
   const [text, setText] = useState("")
   const [loading, setLoading] = useState(false)
   
@@ -19,9 +17,9 @@ function SubmitComplaint({ refresh }) {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+            "Content-Type": "application/json"
           },
+          credentials: "include",
           body: JSON.stringify({
             complaint_text: text
           })

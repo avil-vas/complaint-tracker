@@ -1,0 +1,145 @@
+================================================================================
+                    CAMPUS COMPLAINT TRACKER SYSTEM
+                           PROJECT WORKFLOW
+================================================================================
+
+1. PROJECT OVERVIEW
+-------------------
+The Campus Complaint Tracker is a web application designed to streamline student 
+complaint submissions, routing, and management. When a student submits a 
+complaint, the backend automatically processes the text using Google's Gemini 
+2.5 Flash API (with a built-in local keyword fallback system) to classify:
+  - Complaint Category (e.g., Hostel, Academic, Infrastructure, etc.)
+  - Target Department (e.g., hostel, academic, maintenance, canteen, etc.)
+  - Priority Level (low, medium, high)
+  - Sentiment (negative, neutral, positive)
+
+The complaint is then routed to the corresponding department's dashboard where 
+department admins can triage it, track progress, and update status. 
+A Super Admin oversees the entire system, reviews all departments, and manages 
+the department administrators.
+
+
+2. SYSTEM ARCHITECTURE
+----------------------
+Backend: Node.js, Express, MongoDB (Mongoose), JSON Web Tokens (JWT) for session 
+         security, and bcryptjs for password hashing.
+Frontend: React (Vite-based setup), React Router DOM (with protected route wrapper), 
+          and Tailwind CSS for styling.
+Auth Context: Context API used on the frontend to manage JWT tokens, current user session, 
+              persistent local storage state, login, and logout functions.
+
+
+3. DATA MODELS (MongoDB Schema)
+-------------------------------
+* USER SCHEMA (models/User.js):
+  - name (String): Full name of the user
+  - email (String): Unique college email address
+  - password (String): Hashed password
+  - role (String): "student" | "admin" | "superadmin" (default: "student")
+  - department (String): "maintenance" | "hostel" | "academic" | "canteen" | "student welfare" | "administration" (default: "administration")
+
+* COMPLAINT SCHEMA (models/Complaint.js):
+  - user (ObjectId): Reference to the User model (student who submitted)
+  - complaint_text (String): Detailed text of the complaint
+  - category (String): E.g., "Hostel", "Academic", "Infrastructure", "Canteen", "Harassment", "Other"
+  - department (String): Target department mapped by AI/fallback
+  - priority (String): "low" | "medium" | "high"
+  - sentiment (String): "negative" | "neutral" | "positive"
+  - status (String): "Pending" | "In Progress" | "Resolved" (default: "Pending")
+
+
+4. USER ROLES & SYSTEM WORKFLOWS
+--------------------------------
+
+[A] STUDENT WORKFLOW:
+    1. Sign Up & Login:
+       - Student signs up with name, email, password (role defaults to "student").
+       - Logs in and receives a JWT token saved to localStorage.
+    2. Submit Complaint:
+       - Navigates to Submit Complaint page and writes a text description.
+       - Upon submission, the backend triggers the AI classification.
+       - The complaint is saved with its analyzed category, department, priority, 
+         and sentiment, defaulting to "Pending" status.
+    3. View Complaints:
+       - Student Dashboard shows a list of all complaints submitted by the logged-in student.
+       - A summary stats banner counts Pending, In Progress, and Resolved complaints.
+       - Details card displays priority (with color-coded badges) and sentiment.
+
+[B] DEPARTMENT ADMIN WORKFLOW:
+    1. Sign Up & Login:
+       - Admin signs up selecting their designated department (e.g. maintenance, hostel).
+       - Logs in and is routed to the Admin Dashboard (`/admin`).
+    2. Triage and Progress Tracking:
+       - The Admin Dashboard shows complaints belonging *only* to their department.
+       - Displays key metrics: total assigned, pending, in progress, resolved.
+       - Shows lists of complaints filtered by state (e.g., active vs resolved).
+    3. Update Complaint Status:
+       - Admin can change the status of any complaint in their queue (Pending -> In Progress -> Resolved).
+       - Status updates persist in the database and reflect instantly on the student's dashboard.
+
+[C] SUPER ADMIN WORKFLOW:
+    1. System Provisioning:
+       - Super admin role cannot self-register through signup (blocked for security).
+       - Created by manually updating a user's role to "superadmin" in the database.
+       - Logs in and is routed to the Super Admin Dashboard (`/superadmin`).
+    2. Universal Oversight:
+       - Can view ALL complaints across all departments.
+       - Has access to department load breakdowns and system-wide metrics.
+       - Can update the status of any complaint.
+    3. Admin Management:
+       - Accesses `/superadmin/admins` to view the roster of all department admins.
+       - Shows which department each admin manages.
+       - Can delete/remove admins from the system to revoke credentials.
+
+
+5. API ENDPOINTS (routes/...)
+-----------------------------
+* AUTHENTICATION ENDPOINTS (routes/authRoutes.js):
+  - POST   /api/auth/signup         Registers user (Blocks "superadmin" role registration)
+  - POST   /api/auth/login          Authenticates user, signs JWT token, returns user role
+  - POST   /api/auth/logout         Logs out user
+
+* COMPLAINT ENDPOINTS (routes/complaintRoutes.js):
+  - POST   /api/complaints/create       Creates a complaint (Runs AI/fallback classifier)
+  - GET    /api/complaints/my           Retrieves calling student's complaints
+  - GET    /api/complaints/department   Retrieves complaints for the admin's department
+  - GET    /api/complaints/all          Retrieves all system complaints (Superadmin only)
+  - GET    /api/complaints/admins       Retrieves all department admins (Superadmin only)
+  - DELETE /api/complaints/admin/:id    Deletes department admin (Superadmin only)
+  - PATCH  /api/complaints/status/:id    Updates complaint status (Admin/Superadmin)
+
+
+6. FRONTEND PAGES & ROUTING (routes/AppRoutes.jsx)
+--------------------------------------------------
+All private routes are wrapped in a `<ProtectedRoute>` component validating 
+the JWT token and checking user roles.
+
+* PUBLIC ROUTES:
+  - `/`                   -> Login Page
+  - `/signup`             -> Sign Up Page
+
+* STUDENT ROUTES:
+  - `/student`            -> StudentDashboard
+  - `/student/submit`     -> SubmitComplaint Page
+
+* DEPARTMENT ADMIN ROUTES:
+  - `/admin`              -> AdminDashboard (Overview, metrics)
+  - `/admin/complaints`   -> Detailed Complaint Table
+
+* SUPER ADMIN ROUTES:
+  - `/superadmin`         -> SuperAdminDashboard (System-wide metrics, complaints overview)
+  - `/superadmin/admins`   -> AdminManagement Page (Admin directory, delete admin actions)
+
+
+7. SYSTEM CLASSIFICATION ENGINE
+-------------------------------
+When a complaint is submitted, the backend attempts to call the Gemini API:
+  - Prompt: Analyzes complaint text and returns a strict JSON matching schema defining:
+    { category, department, priority, sentiment }
+  - Fallback: If GEMINI_API_KEY is not defined, or the call fails (network issue/quota exceeded), 
+    the system utilizes keyword regex mapping in backend/controllers/complaintController.js.
+    For example:
+    - Keywords like "water", "electricity", "wifi" route to Infrastructure/maintenance department.
+    - Keywords like "food", "mess", "lunch" route to Canteen department.
+    - Keywords like "harass", "bully" route to Harassment/student welfare with high priority.

@@ -4,17 +4,11 @@ const authMiddleware = (req, res, next) => {
 
   try {
 
-    const authHeader = req.headers.authorization
+    const token = req.cookies.token
 
-    if (!authHeader) {
-      return res.status(401).json({ message: "No Authorization header" })
+    if (!token) {
+      return res.status(401).json({ message: "Authentication required: no token provided" })
     }
-
-    if (!authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Invalid Authorization format" })
-    }
-
-    const token = authHeader.split(" ")[1]
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
 

@@ -14,22 +14,28 @@ const PARTICLES = Array.from({ length: 28 }, (_, i) => ({
 function Signup() {
 
   const navigate = useNavigate()
-  const { user, token, login } = useContext(AuthContext)
+  const { user, loading: authLoading, login } = useContext(AuthContext)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
 
-    if (!token || !user) {
+    if (authLoading) {
       return
     }
 
-    if (user.role === "admin") {
+    if (!user) {
+      return
+    }
+
+    if (user.role === "superadmin") {
+      navigate("/superadmin")
+    } else if (user.role === "admin") {
       navigate("/admin")
     } else {
       navigate("/student")
     }
 
-  }, [token, user, navigate])
+  }, [user, authLoading, navigate])
 
   const [form, setForm] = useState({
     name: "",
@@ -72,6 +78,7 @@ function Signup() {
         headers: {
           "Content-Type": "application/json"
         },
+        credentials: "include",
         body: JSON.stringify(bodyData)
       })
 
@@ -83,9 +90,11 @@ function Signup() {
         return
       }
 
-      login(data.user, data.token)
+      login(data.user)
 
-      if (data.user.role === "admin") {
+      if (data.user.role === "superadmin") {
+        navigate("/superadmin")
+      } else if (data.user.role === "admin") {
         navigate("/admin")
       } else {
         navigate("/student")

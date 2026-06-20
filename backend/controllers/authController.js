@@ -8,6 +8,13 @@ export const signup = async (req, res) => {
 
     const { name, email, password, role, department } = req.body
 
+    // Block superadmin self-registration
+    if (role === "superadmin") {
+      return res.status(403).json({
+        message: "Super admin accounts cannot be created through signup"
+      })
+    }
+
     const existingUser = await User.findOne({ email })
 
     if (existingUser) {
@@ -70,12 +77,18 @@ export const login = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "7d" }
     )
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    })
 
     res.json({
       message: "Login successful",
-      token,
       user
     })
 
@@ -95,8 +108,44 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
 
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict"
+  })
+
   res.json({
     message: "Logout successful"
   })
+
+}
+
+
+
+export const getMe = async (req, res) => {
+
+  try {
+
+    const user = await User.findById(req.user.id).select("-password")
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      })
+    }
+
+    res.json({
+      user
+    })
+
+  } catch (error) {
+
+    console.log(error)
+
+    res.status(500).json({
+      message: "Server error"
+    })
+
+  }
 
 }

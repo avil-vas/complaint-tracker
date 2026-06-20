@@ -1,11 +1,8 @@
-import { useEffect, useState, useContext } from "react"
+import { useEffect, useState } from "react"
 import AdminLayout from "../components/AdminLayout"
 import { getPriorityClasses, getStatusClasses, normalisePriority, statusOptions } from "../components/adminTheme"
-import { AuthContext } from "../context/AuthContext"
 
 function AdminDashboard() {
-
-  const { token } = useContext(AuthContext)
 
   const [complaints, setComplaints] = useState([])
   const [activeStatus, setActiveStatus] = useState("All")
@@ -17,9 +14,7 @@ function AdminDashboard() {
       const res = await fetch(
         "http://localhost:3000/api/complaints/department",
         {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          credentials: "include"
         }
       )
 
@@ -46,9 +41,9 @@ function AdminDashboard() {
         {
           method: "PATCH",
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+            "Content-Type": "application/json"
           },
+          credentials: "include",
           body: JSON.stringify({ status })
         }
       )
@@ -72,10 +67,8 @@ function AdminDashboard() {
   }
 
   useEffect(() => {
-    if (token) {
-      fetchComplaints()
-    }
-  }, [token])
+    fetchComplaints()
+  }, [])
 
   const pendingCount = complaints.filter((complaint) => complaint.status === "Pending").length
   const inProgressCount = complaints.filter((complaint) => complaint.status === "In Progress").length

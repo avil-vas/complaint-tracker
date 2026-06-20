@@ -12,10 +12,28 @@ const pageCopy = {
     label: "Queue management",
     title: "Complaint Queue",
     subtitle: "Search, sort, and update live cases without leaving the workstream."
+  },
+  "/superadmin": {
+    label: "Super admin command center",
+    title: "System Overview",
+    subtitle: "Monitor all complaints across every department, manage admins, and keep the entire system running smoothly."
+  },
+  "/superadmin/admins": {
+    label: "Admin management",
+    title: "Department Admins",
+    subtitle: "View, monitor, and manage all department administrators from one place."
   }
 }
 
 function getPageDetails(pathname) {
+
+  if (pathname.startsWith("/superadmin/admins")) {
+    return pageCopy["/superadmin/admins"]
+  }
+
+  if (pathname.startsWith("/superadmin")) {
+    return pageCopy["/superadmin"]
+  }
 
   if (pathname.startsWith("/admin/complaints")) {
     return pageCopy["/admin/complaints"]
@@ -32,8 +50,9 @@ function Navbar() {
   const navigate = useNavigate()
 
   const pageDetails = getPageDetails(pathname)
-  const departmentLabel = user?.department ? `${user.department} desk` : "Operations desk"
+  const departmentLabel = user?.role === "superadmin" ? "All departments" : (user?.department ? `${user.department} desk` : "Operations desk")
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || "A"
+  const roleDisplayLabel = user?.role === "superadmin" ? "Super Administrator" : "Administrator"
   const formattedDate = new Date().toLocaleDateString("en-US", {
     weekday: "short",
     month: "long",
@@ -100,7 +119,7 @@ function Navbar() {
                 {user?.name || "Admin"}
               </p>
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                Administrator
+                {roleDisplayLabel}
               </p>
             </div>
           </div>

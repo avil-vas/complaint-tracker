@@ -4,7 +4,7 @@ import ComplaintCard from "../components/ComplaintCard"
 import SubmitComplaint from "./SubmitComplaint"
 
 function StudentDashboard() {
-  const { user, token, logout } = useContext(AuthContext)
+  const { user, logout } = useContext(AuthContext)
   const [complaints, setComplaints] = useState([])
   
   // Search & Filter State
@@ -17,9 +17,7 @@ function StudentDashboard() {
       const res = await fetch(
         "http://localhost:3000/api/complaints/my",
         {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          credentials: "include"
         }
       )
       const data = await res.json()

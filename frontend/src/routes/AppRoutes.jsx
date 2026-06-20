@@ -9,6 +9,9 @@ import SubmitComplaint from "../pages/SubmitComplaint"
 import AdminDashboard from "../pages/AdminDashboard"
 import ComplaintTable from "../components/ComplaintTable"
 
+import SuperAdminDashboard from "../pages/SuperAdminDashboard"
+import AdminManagement from "../pages/AdminManagement"
+
 import ProtectedRoute from "../components/ProtectedRoute"
 
 function AppRoutes() {
@@ -54,6 +57,25 @@ function AppRoutes() {
         element={
           <ProtectedRoute role="admin">
             <ComplaintTable />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Super Admin */}
+      <Route
+        path="/superadmin"
+        element={
+          <ProtectedRoute role="superadmin">
+            <SuperAdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/superadmin/admins"
+        element={
+          <ProtectedRoute role="superadmin">
+            <AdminManagement />
           </ProtectedRoute>
         }
       />
