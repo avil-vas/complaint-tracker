@@ -1,0 +1,339 @@
+﻿CAMPUS COMPLAINT TRACKER
+Complete project explanation for an Infosys SP / DSE interview
+AI-assisted student grievance management with secure role-based
+workflows, department routing, status tracking, and email notifications.
+30-second project pitch
+Campus Complaint Tracker is a full-stack web application for colleges. Students submit complaints
+through a React interface. The backend classifies the text, routes it to the correct department, and
+stores its lifecycle in MongoDB. Department admins manage their queues, while a super admin
+gets system-wide oversight. A local classifier keeps the workflow usable if the Gemini API is
+unavailable.
+Use this guide as a speaking script: explain the problem, trace one complaint from
+submission to resolution, then discuss the engineering decisions.
+
+1. Problem and Objectives
+Campus complaints are frequently handled through paper forms, chat messages, or verbal
+requests. This makes routing inconsistent, progress difficult to track, and administrative workload
+hard to measure. The project creates one traceable workflow for submission, classification,
+assignment, action, and resolution.
+The central objective is simple: every complaint should have a clear owner,
+department, priority, status, and visible outcome.
+Objectives
+- Give students an authenticated portal to submit and track their own complaints.
+- Classify free-form complaint text into category, department, priority, and sentiment.
+- Give department admins a focused queue containing only their department complaints.
+- Allow authorized admins to move complaints from Pending to In Progress to Resolved.
+- Give the super admin organization-wide visibility and admin-account management.
+- Notify students when a complaint is received and when its status changes.
+
+Expected result
+Area
+Expected result
+Routing
+Complaint is classified and stored with a target department.
+Access
+Student sees personal records; admin sees assigned department; super admin sees all.
+Traceability
+Status and priority are visible and email events can be sent.
+Resilience
+Local fallback works when the AI key or external service is unavailable.
+
+2. Tech Stack
+Layer
+Technology
+Responsibility
+Frontend
+React 19, Vite
+Component UI and development/build workflow.
+Routing and UI
+React Router DOM, Tailwind
+CSS
+Protected routes and responsive dashboard styling.
+Backend
+Node.js, Express 5
+REST APIs, request parsing, middleware, and
+controllers.
+Database
+MongoDB, Mongoose
+Users, complaints, references, sorting, and CRUD
+operations.
+Security
+bcryptjs, JWT, HTTP-only
+cookies
+Password hashing, sessions, and role claims.
+AI
+Google Gemini 2.5 Flash
+Structured classification of complaint text.
+Reliability
+Local keyword classifier
+Fallback during missing key, network failure, quota
+failure, or invalid AI output.
+Notifications
+Nodemailer with Gmail SMTP
+Receipt and status-update email messages.
+Important environment values include the MongoDB connection string, JWT secret, optional
+GEMINI_API_KEY, email credentials, and port. Secrets should remain outside source control.
+
+3. Architecture and Data Flow
+Campus Complaint Tracker - architecture
+FRONTEND
+React 19
+Vite + Tailwind
+React Router
+Auth Context
+BACKEND
+Node + Express
+REST API
+JWT middleware
+Role checks
+AI CLASSIFIER
+Gemini 2.5 Flash
+Strict JSON schema
+Keyword fallback
+DATA + EMAIL
+MongoDB + Mongoose
+Users / Complaints
+Nodemailer events
+submit -> classify -> store -> route -> update -> notify
+End-to-end complaint flow
+- React sends POST /api/complaints/create with the complaint text and browser credentials.
+- Express authMiddleware reads and verifies the HTTP-only JWT cookie, then attaches the
+authenticated user to req.user.
+- The controller calls Gemini with a strict JSON response schema when GEMINI_API_KEY is
+available.
+- If the call fails or the key is absent, the local keyword classifier creates the same four classification
+fields.
+- The complaint is stored with the student id, classification fields, and Pending status.
+- The response returns immediately; confirmation email work runs asynchronously.
+- An admin queue reads department-filtered records. A status update persists in MongoDB and starts a
+status email.
+Interview summary
+The frontend handles presentation and navigation. The backend is the source of
+truth for identity, routing, authorization, and status. The database stores the
+lifecycle, and external services are isolated behind fallback or asynchronous
+behavior.
+
+4. Roles and Workflows
+Role
+Main capabilities
+Routes
+Student
+Sign up, log in, submit, view personal complaints, track status.
+/student, /student/submit
+Department
+admin
+View assigned department queue and update complaint status.
+/admin,
+/admin/complaints
+Super admin
+View all complaints, system metrics, and manage department
+admins.
+/superadmin,
+/superadmin/admins
+Student journey
+- Student signs up; role defaults to student unless a department admin is selected.
+- Login compares the password with the bcrypt hash and sets a seven-day JWT cookie.
+- Student submits a complaint of up to 600 characters.
+- Backend classifies and stores it as Pending.
+- Student dashboard shows personal complaints, counts by status, priority, and sentiment.
+- Admin status changes are reflected in the student view and can trigger email updates.
+
+Admin and super-admin journey
+- Admin department is read from the User document and used for server-side filtering.
+- Admin dashboard shows total, Pending, In Progress, and Resolved counts.
+- Super admin can retrieve all complaints and the department-admin roster.
+- Super-admin signup is blocked; provisioning is performed by changing a user role in the database.
+
+5. Data Model and API
+User model
+Field
+Meaning
+name
+Required full name.
+email
+Required unique login identifier.
+password
+bcrypt hash.
+role
+student, admin, or superadmin.
+department
+Admin assignment; administration by default.
+timestamps
+createdAt and updatedAt from Mongoose.
+Complaint model
+Field
+Meaning
+user
+ObjectId reference to User.
+complaint_text
+Required issue description.
+category
+Hostel, Academic, Infrastructure, Canteen, Harassment, or Other.
+department
+hostel, academic, maintenance, canteen, student welfare, or administration.
+priority
+low, medium, or high.
+sentiment
+negative, neutral, or positive.
+status
+Pending, In Progress, or Resolved.
+
+6. REST API Contract
+Method
+Endpoint
+Purpose
+POST
+/api/auth/signup
+Register student/admin; block superadmin
+self-registration.
+POST
+/api/auth/login
+Verify credentials and issue JWT cookie.
+POST
+/api/auth/logout
+Clear cookie.
+GET
+/api/auth/me
+Return current user without password.
+POST
+/api/complaints/create
+Classify and create complaint.
+GET
+/api/complaints/my
+Student's own complaints.
+GET
+/api/complaints/department
+Admin department complaints; superadmin gets all.
+GET
+/api/complaints/all
+All complaints; superadmin only.
+GET /
+DELETE
+/api/complaints/admins and
+/admin/:id
+Admin roster and removal; superadmin only.
+PATCH
+/api/complaints/status/:id
+Update complaint status.
+The API uses JSON request bodies. CORS is configured for the Vite frontend, credentials are
+enabled for cookies, and Express parses JSON before the routes run.
+
+7. Security and AI Design
+Authentication
+- Signup hashes passwords using bcryptjs with cost factor 10.
+- Login uses bcrypt.compare and signs a seven-day JWT containing user id and role.
+- JWT is stored in an HTTP-only cookie. secure is enabled in production and sameSite is strict.
+- AuthContext calls /api/auth/me on startup to restore the session.
+
+Authorization
+- ProtectedRoute blocks unauthenticated users and incorrect frontend roles.
+- authMiddleware verifies the JWT on API requests.
+- requireRole protects super-admin endpoints.
+- Department filtering uses the admin department loaded from MongoDB rather than trusting a client
+value.
+AI classification
+Gemini receives a prompt asking for JSON with category, department, priority, and sentiment. The
+schema restricts allowed values. The fallback applies ordered keyword rules for hostel, canteen,
+academic, infrastructure, and harassment topics, then adjusts priority and sentiment from words
+such as urgent, emergency, bad, happy, or request.
+
+8. Results and Honest Limitations
+Implemented functional results
+- Students can authenticate, submit complaints, and retrieve only their own records.
+- Complaints are enriched with classification fields and Pending status before persistence.
+- Admins receive department-scoped queues; super admins receive system-wide visibility.
+- Status changes persist and become visible to students.
+- Email events are non-blocking and skip safely when email settings are missing.
+- AI failure has a local fallback path.
+
+What not to claim
+The repository does not include production traffic, measured latency, labeled
+classification data, automated tests, or resolution-time statistics. Do not invent
+accuracy or performance percentages in the interview. Describe the result as an
+end-to-end implemented workflow, then explain that quantitative KPIs are the next
+validation step.
+Next measurements
+- Classification precision and recall against a human-labeled test set.
+- Fallback rate and API failure rate from structured logs.
+- p50 and p95 latency for complaint creation and status updates.
+- Time from Pending to Resolved by department.
+
+Production improvements
+- Add enum validation, ownership checks, rate limiting, input limits, audit logs, and centralized errors.
+- Add indexes and pagination for department and createdAt queries.
+- Move notifications to a durable queue with retries.
+- Add unit, integration, security, and frontend tests.
+
+9. Suggested Interview Explanation
+My project is a Campus Complaint Tracker built to make student grievance handling organized and
+traceable. A student submits a complaint through a React interface. The Node and Express
+backend authenticates the request, sends the text to Gemini for structured classification, and falls
+back to keyword rules if the AI service is unavailable. The backend stores the complaint in
+MongoDB with its department, priority, sentiment, and Pending status. Department admins see
+only their department queue and update status, while a super admin sees the entire system and
+manages admins. Students track progress, and Nodemailer sends confirmation and status-update
+emails asynchronously. The project demonstrates full-stack development, REST APIs,
+authentication, authorization, database design, third-party integration, and resilience engineering.
+Example complaint walkthrough
+- Input: The hostel Wi-Fi has been unavailable since yesterday and students cannot attend online
+classes.
+- Classifier identifies hostel/infrastructure context, maps a department, assigns priority, and derives
+sentiment.
+- Backend adds the authenticated user id, stores the classification, and sets Pending.
+- Department admin changes status to In Progress and later Resolved.
+- Student dashboard and email notifications reflect the lifecycle.
+
+Use first-person language only for the work you actually performed. A safe
+contribution statement is: I designed the role model, implemented authentication,
+connected the complaint lifecycle to MongoDB, integrated structured AI
+classification, and added a fallback so the core workflow remains usable.
+
+10. Likely Infosys SP / DSE Questions
+Why MongoDB instead of a relational database?
+The complaint is naturally document-oriented and works well with JavaScript and Mongoose references. A
+relational database would also be valid if strong joins, reporting, or transactions became dominant.
+How does role-based access control work?
+JWT contains user id and role. The backend verifies the token and checks allowed roles. The frontend
+route guard improves navigation, but the backend remains the security boundary.
+Why use an HTTP-only cookie?
+JavaScript cannot normally read it, reducing token exposure in many XSS scenarios. SameSite helps with
+CSRF; production should add explicit CSRF controls where needed.
+What if Gemini is down?
+The controller catches missing configuration, network errors, bad responses, and parsing failures, then
+uses the local keyword classifier so submission still works.
+How would you improve classification accuracy?
+Use labeled data, measure precision and recall, improve prompts and examples, add confidence/source
+fields, and send low-confidence cases to manual review.
+How do you prevent cross-department access?
+The server loads the admin department from MongoDB and filters there. I would add explicit role and
+object-level authorization tests for every mutation.
+What is the query complexity?
+Without an index a department filter can scan O(n) records. An index on department and createdAt, plus
+pagination, improves scale.
+Why send email asynchronously?
+SMTP is slower and external. Returning the API response first keeps the UI responsive. A production
+queue would add durability and retries.
+How would you test the system?
+Unit test the classifier; integration test signup, login, create, filtering, and status changes; test unauthorized
+and cross-role requests; and test protected frontend routes.
+What are the main security risks?
+Credential attacks, XSS, CSRF, broken object-level authorization, unvalidated status updates, sensitive
+logs, and leaked secrets. Use rate limiting, safe cookies, validation, ownership checks, redacted logs, and
+secret management.
+How would you scale it?
+Add indexes, pagination, stateless API instances, a notification queue, observability, and a worker for AI
+classification if it becomes latency-heavy.
+What was the hardest decision?
+Treating AI as an enhancement rather than a single point of failure. The fallback preserves the core
+complaint lifecycle during external outages.
+
+How do you handle duplicate complaints?
+The current system does not deduplicate. A next version could warn about similar recent complaints or let
+admins merge records while preserving an audit history.
+What would you build next?
+Audit history, comments, attachments, SLA reminders, analytics, stronger validation, automated tests, and
+a low-confidence review queue.
+Closing line
+The project connects a real operational problem to a complete engineering solution:
+a user workflow, secure APIs, persistent data, intelligent routing, administrative
+controls, and resilient notifications.

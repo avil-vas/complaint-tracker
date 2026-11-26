@@ -2,11 +2,12 @@ import { useContext, useEffect, useState } from "react"
 import { AuthContext } from "../context/AuthContext"
 import ComplaintCard from "../components/ComplaintCard"
 import SubmitComplaint from "./SubmitComplaint"
+import { apiUrl } from "../config/api"
 
 function StudentDashboard() {
   const { user, logout } = useContext(AuthContext)
   const [complaints, setComplaints] = useState([])
-  
+
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -15,7 +16,7 @@ function StudentDashboard() {
   const fetchComplaints = async () => {
     try {
       const res = await fetch(
-        "http://localhost:3000/api/complaints/my",
+        apiUrl("/api/complaints/my"),
         {
           credentials: "include"
         }
@@ -39,15 +40,15 @@ function StudentDashboard() {
 
   // Filter logic
   const filteredComplaints = complaints.filter((c) => {
-    const matchesSearch = 
+    const matchesSearch =
       (c.complaint_text || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.category || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.department || "").toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || 
+
+    const matchesStatus = statusFilter === "all" ||
       (c.status || "").toLowerCase() === statusFilter.toLowerCase();
-      
-    const matchesCategory = categoryFilter === "all" || 
+
+    const matchesCategory = categoryFilter === "all" ||
       (c.category || "").toLowerCase() === categoryFilter.toLowerCase();
 
     return matchesSearch && matchesStatus && matchesCategory;

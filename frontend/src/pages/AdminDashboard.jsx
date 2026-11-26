@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import AdminLayout from "../components/AdminLayout"
 import { getPriorityClasses, getStatusClasses, normalisePriority, statusOptions } from "../components/adminTheme"
+import { apiUrl } from "../config/api"
 
 function AdminDashboard() {
 
@@ -12,7 +13,7 @@ function AdminDashboard() {
     try {
 
       const res = await fetch(
-        "http://localhost:3000/api/complaints/department",
+        apiUrl("/api/complaints/department"),
         {
           credentials: "include"
         }
@@ -37,7 +38,7 @@ function AdminDashboard() {
     try {
 
       const res = await fetch(
-        `http://localhost:3000/api/complaints/status/${id}`,
+        apiUrl(`/api/complaints/status/${id}`),
         {
           method: "PATCH",
           headers: {

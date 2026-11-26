@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import AdminLayout from "./AdminLayout"
 import { getPriorityClasses, getStatusClasses, normalisePriority, statusOptions } from "./adminTheme"
+import { apiUrl } from "../config/api"
 
 function ComplaintTable() {
 
@@ -11,7 +12,7 @@ function ComplaintTable() {
   const fetchComplaints = async () => {
 
     const res = await fetch(
-      "http://localhost:3000/api/complaints/department",
+      apiUrl("/api/complaints/department"),
       {
         credentials: "include"
       }
@@ -26,7 +27,7 @@ function ComplaintTable() {
   const updateStatus = async (id, status) => {
 
     await fetch(
-      `http://localhost:3000/api/complaints/status/${id}`,
+      apiUrl(`/api/complaints/status/${id}`),
       {
         method: "PATCH",
         headers: {
@@ -144,8 +145,8 @@ function ComplaintTable() {
         </div>
 
         {filteredComplaints.length === 0 ? (
-            <div className="mt-6 flex min-h-[260px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[#dbe7ff] bg-[#f8fbff] px-6 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#e0eaff] text-[#1d4ed8]">
+          <div className="mt-6 flex min-h-[260px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[#dbe7ff] bg-[#f8fbff] px-6 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#e0eaff] text-[#1d4ed8]">
               <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.25 6.75h7.5A2.25 2.25 0 0 1 18 9v6a2.25 2.25 0 0 1-2.25 2.25h-7.5A2.25 2.25 0 0 1 6 15V9a2.25 2.25 0 0 1 2.25-2.25Z" />
               </svg>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import AdminLayout from "../components/AdminLayout"
+import { apiUrl } from "../config/api"
 
 function AdminManagement() {
 
@@ -11,7 +12,7 @@ function AdminManagement() {
     try {
 
       const res = await fetch(
-        "http://localhost:3000/api/complaints/admins",
+        apiUrl("/api/complaints/admins"),
         {
           credentials: "include"
         }
@@ -40,7 +41,7 @@ function AdminManagement() {
     try {
 
       const res = await fetch(
-        `http://localhost:3000/api/complaints/admin/${id}`,
+        apiUrl(`/api/complaints/admin/${id}`),
         {
           method: "DELETE",
           credentials: "include"

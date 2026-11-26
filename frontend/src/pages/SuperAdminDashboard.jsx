@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import AdminLayout from "../components/AdminLayout"
 import { getPriorityClasses, getStatusClasses, normalisePriority, statusOptions } from "../components/adminTheme"
+import { apiUrl } from "../config/api"
 
 function SuperAdminDashboard() {
 
@@ -13,7 +14,7 @@ function SuperAdminDashboard() {
     try {
 
       const res = await fetch(
-        "http://localhost:3000/api/complaints/all",
+        apiUrl("/api/complaints/all"),
         {
           credentials: "include"
         }
@@ -36,7 +37,7 @@ function SuperAdminDashboard() {
     try {
 
       const res = await fetch(
-        "http://localhost:3000/api/complaints/admins",
+        apiUrl("/api/complaints/admins"),
         {
           credentials: "include"
         }
@@ -59,7 +60,7 @@ function SuperAdminDashboard() {
     try {
 
       const res = await fetch(
-        `http://localhost:3000/api/complaints/status/${id}`,
+        apiUrl(`/api/complaints/status/${id}`),
         {
           method: "PATCH",
           headers: {

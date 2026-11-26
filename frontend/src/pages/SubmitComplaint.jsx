@@ -1,9 +1,10 @@
 import { useState } from "react"
+import { apiUrl } from "../config/api"
 
 function SubmitComplaint({ refresh }) {
   const [text, setText] = useState("")
   const [loading, setLoading] = useState(false)
-  
+
   const maxLength = 600
 
   const handleSubmit = async (e) => {
@@ -13,7 +14,7 @@ function SubmitComplaint({ refresh }) {
 
     try {
       const res = await fetch(
-        "http://localhost:3000/api/complaints/create",
+        apiUrl("/api/complaints/create"),
         {
           method: "POST",
           headers: {
@@ -101,11 +102,10 @@ function SubmitComplaint({ refresh }) {
           <button
             type="submit"
             disabled={loading || !text.trim()}
-            className={`w-full sm:w-auto px-8 py-3 rounded-xl font-bold text-sm transition-all duration-200 shadow-md hover:shadow-lg transform active:scale-[0.98] flex items-center justify-center ${
-              loading || !text.trim()
+            className={`w-full sm:w-auto px-8 py-3 rounded-xl font-bold text-sm transition-all duration-200 shadow-md hover:shadow-lg transform active:scale-[0.98] flex items-center justify-center ${loading || !text.trim()
                 ? 'bg-slate-100 text-slate-400 border border-slate-200/80 cursor-not-allowed shadow-none'
                 : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/20'
-            }`}
+              }`}
           >
             {loading ? (
               <span className="flex items-center gap-2">

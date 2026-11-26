@@ -1,6 +1,7 @@
 import { useState, useContext, useEffect } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { AuthContext } from "../context/AuthContext"
+import { apiUrl } from "../config/api"
 
 const PARTICLES = Array.from({ length: 28 }, (_, i) => ({
   id: i,
@@ -73,7 +74,7 @@ function Signup() {
         bodyData.department = form.department
       }
 
-      const res = await fetch("http://localhost:3000/api/auth/signup", {
+      const res = await fetch(apiUrl("/api/auth/signup"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
