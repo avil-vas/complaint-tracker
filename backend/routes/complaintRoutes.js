@@ -34,6 +34,6 @@ router.get("/admins", authMiddleware, requireRole("superadmin"), getAllAdmins)
 router.delete("/admin/:id", authMiddleware, requireRole("superadmin"), deleteAdmin)
 
 // UPDATE COMPLAINT STATUS
-router.patch("/status/:id", authMiddleware, updateComplaintStatus)
+router.patch("/status/:id", authMiddleware, requireRole("admin", "superadmin"), updateComplaintStatus)
 
 export default router

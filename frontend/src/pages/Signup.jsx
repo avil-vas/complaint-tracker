@@ -41,9 +41,7 @@ function Signup() {
   const [form, setForm] = useState({
     name: "",
     email: "",
-    password: "",
-    role: "student",
-    department: ""
+    password: ""
   })
 
   const handleChange = (e) => {
@@ -65,13 +63,7 @@ function Signup() {
       const bodyData = {
         name: form.name,
         email: form.email,
-        password: form.password,
-        role: form.role
-      }
-
-      // only send department if admin
-      if (form.role === "admin") {
-        bodyData.department = form.department
+        password: form.password
       }
 
       const res = await fetch(apiUrl("/api/auth/signup"), {
@@ -92,14 +84,7 @@ function Signup() {
       }
 
       login(data.user)
-
-      if (data.user.role === "superadmin") {
-        navigate("/superadmin")
-      } else if (data.user.role === "admin") {
-        navigate("/admin")
-      } else {
-        navigate("/student")
-      }
+      navigate("/student")
 
     } catch (error) {
 
@@ -510,42 +495,6 @@ function Signup() {
                   required
                 />
               </div>
-
-              <div className="input-wrap">
-                <label className="input-label" htmlFor="role">Account Type</label>
-                <select
-                  id="role"
-                  name="role"
-                  className="input-field"
-                  onChange={handleChange}
-                  value={form.role}
-                >
-                  <option value="student">Student</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-
-              {form.role === "admin" && (
-                <div className="input-wrap">
-                  <label className="input-label" htmlFor="department">Department</label>
-                  <select
-                    id="department"
-                    name="department"
-                    className="input-field"
-                    onChange={handleChange}
-                    value={form.department}
-                    required
-                  >
-                    <option value="">Select Department</option>
-                    <option value="maintenance">Maintenance Department</option>
-                    <option value="hostel">Hostel Warden</option>
-                    <option value="academic">Academic Office</option>
-                    <option value="canteen">Canteen Manager</option>
-                    <option value="student welfare">Student Welfare Cell</option>
-                    <option value="administration">Administration</option>
-                  </select>
-                </div>
-              )}
 
               <button
                 type="submit"

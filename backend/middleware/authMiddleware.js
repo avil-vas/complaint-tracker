@@ -12,6 +12,12 @@ const authMiddleware = (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
 
+    if (decoded.role === "admin" && decoded.adminProvisioned !== true) {
+      return res.status(403).json({
+        message: "Admin account requires re-provisioning by a superadmin"
+      })
+    }
+
     req.user = decoded
 
     next()

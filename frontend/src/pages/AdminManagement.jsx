@@ -6,6 +6,13 @@ function AdminManagement() {
 
   const [admins, setAdmins] = useState([])
   const [deleting, setDeleting] = useState(null)
+  const [creating, setCreating] = useState(false)
+  const [newAdmin, setNewAdmin] = useState({
+    name: "",
+    email: "",
+    password: "",
+    department: ""
+  })
 
   const fetchAdmins = async () => {
 
@@ -66,6 +73,52 @@ function AdminManagement() {
 
   }
 
+  const handleCreateAdmin = async (e) => {
+
+    e.preventDefault()
+    setCreating(true)
+
+    try {
+
+      const res = await fetch(
+        apiUrl("/api/auth/create-admin"),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "include",
+          body: JSON.stringify(newAdmin)
+        }
+      )
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(data.message || "Failed to create admin")
+        return
+      }
+
+      setNewAdmin({
+        name: "",
+        email: "",
+        password: "",
+        department: ""
+      })
+      await fetchAdmins()
+      alert("Admin created successfully")
+
+    } catch (error) {
+
+      console.log("Create admin error:", error)
+      alert("Failed to create admin")
+
+    } finally {
+      setCreating(false)
+    }
+
+  }
+
   useEffect(() => {
     fetchAdmins()
   }, [])
@@ -122,6 +175,62 @@ function AdminManagement() {
         </div>
       </section>
 
+      <section className="mt-8 rounded-[28px] border border-[#dbe7ff] bg-white/90 p-6 shadow-[0_24px_60px_-45px_rgba(15,23,42,0.4)] backdrop-blur-xl">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#7c3aed]">
+          Create admin
+        </p>
+        <form onSubmit={handleCreateAdmin} className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <input
+            type="text"
+            placeholder="Full name"
+            autoComplete="name"
+            value={newAdmin.name}
+            onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })}
+            required
+            className="rounded-xl border border-slate-300 px-4 py-3 text-sm"
+          />
+          <input
+            type="email"
+            placeholder="Email address"
+            autoComplete="email"
+            value={newAdmin.email}
+            onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
+            required
+            className="rounded-xl border border-slate-300 px-4 py-3 text-sm"
+          />
+          <input
+            type="password"
+            placeholder="Temporary password"
+            autoComplete="new-password"
+            value={newAdmin.password}
+            onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
+            required
+            className="rounded-xl border border-slate-300 px-4 py-3 text-sm"
+          />
+          <select
+            value={newAdmin.department}
+            onChange={(e) => setNewAdmin({ ...newAdmin, department: e.target.value })}
+            required
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
+          >
+            <option value="">Select department</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="hostel">Hostel</option>
+            <option value="academic">Academic</option>
+            <option value="canteen">Canteen</option>
+            <option value="student welfare">Student welfare</option>
+            <option value="administration">Administration</option>
+          </select>
+          <button
+            type="submit"
+            disabled={creating}
+            className="rounded-xl bg-[#7c3aed] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#6d28d9] disabled:opacity-50"
+          >
+            {creating ? "Creating..." : "Create admin"}
+          </button>
+        </form>
+      </section>
+
       {/* Admin list */}
       <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_360px]">
 
@@ -146,7 +255,7 @@ function AdminManagement() {
                 No admins registered
               </h4>
               <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                Admins will appear here once they sign up with an admin account.
+                Admins will appear here once a superadmin creates their accounts.
               </p>
             </div>
           ) : (

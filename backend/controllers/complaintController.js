@@ -59,7 +59,7 @@ export const createComplaint = async (req, res) => {
     let aiData;
     if (process.env.GEMINI_API_KEY) {
       try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -312,11 +312,14 @@ export const updateComplaintStatus = async (req, res) => {
 
     const { status } = req.body
 
-    console.log("Updating complaint:", req.params.id)
-    console.log("New status:", status)
+    if (!["Pending", "In Progress", "Resolved"].includes(status)) {
+      return res.status(400).json({
+        message: "Invalid complaint status"
+      })
+    }
 
     // Retrieve old status and populate user profile details before updating
-    const oldComplaint = await Complaint.findById(req.params.id).populate("user")
+    const oldComplaint = await Complaint.findById(req.params.id).populate("user", "name email")
 
     if (!oldComplaint) {
       return res.status(404).json({
@@ -324,13 +327,22 @@ export const updateComplaintStatus = async (req, res) => {
       })
     }
 
+    if (req.user.role === "admin") {
+      const user = await User.findById(req.user.id)
+      const adminDepartment = (user?.department || "").toLowerCase().trim()
+      const complaintDepartment = (oldComplaint.department || "").toLowerCase().trim()
+
+      if (!user || complaintDepartment !== adminDepartment) {
+        return res.status(403).json({
+          message: "You can only update complaints in your department"
+        })
+      }
+    }
+
     const oldStatus = oldComplaint.status
 
-    const complaint = await Complaint.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { returnDocument: 'after' }
-    )
+    oldComplaint.status = status
+    const complaint = await oldComplaint.save()
 
     res.json(complaint)
 
@@ -348,7 +360,7 @@ export const updateComplaintStatus = async (req, res) => {
 
   } catch (error) {
 
-    console.log("Update error:", error)
+    console.error("Update error:", error)
 
     res.status(500).json({
       message: "Error updating complaint status"

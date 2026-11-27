@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema({
     default: "student"
   },
 
+  adminProvisioned: {
+    type: Boolean,
+    default: false
+  },
+
   department: {
     type: String,
     enum: [
@@ -33,8 +38,7 @@ const userSchema = new mongoose.Schema({
       "canteen",
       "student welfare",
       "administration"
-    ],
-    default: "administration"
+    ]
   }
 
 }, { timestamps: true })

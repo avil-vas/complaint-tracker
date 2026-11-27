@@ -5,8 +5,11 @@ import cookieParser from "cookie-parser"
 import connectDB from "./config/db.js"
 import authRoutes from "./routes/authRoutes.js"
 import complaintRoutes from "./routes/complaintRoutes.js"
+import { fileURLToPath } from "node:url"
 
-dotenv.config()
+dotenv.config({
+  path: fileURLToPath(new URL("./.env", import.meta.url))
+})
 
 const app = express()
 

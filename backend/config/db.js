@@ -3,8 +3,10 @@ import mongoose from "mongoose";
 let connectionPromise;
 
 const connectDB = async () => {
-  if (!process.env.MONGO_URI) {
-    throw new Error("MONGO_URI is not configured")
+  const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI
+
+  if (!mongoUri) {
+    throw new Error("MONGO_URI or MONGODB_URI is not configured")
   }
 
   if (mongoose.connection.readyState === 1) {
@@ -12,7 +14,7 @@ const connectDB = async () => {
   }
 
   if (!connectionPromise) {
-    connectionPromise = mongoose.connect(process.env.MONGO_URI, {
+    connectionPromise = mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 10000
     }).then(() => {
       console.log("MongoDB connected")

@@ -2,18 +2,19 @@ import User from "../models/User.js"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 
+const getPublicUser = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  department: user.department ?? null
+})
+
 export const signup = async (req, res) => {
 
   try {
 
-    const { name, email, password, role, department } = req.body
-
-    // Block superadmin self-registration
-    if (role === "superadmin") {
-      return res.status(403).json({
-        message: "Super admin accounts cannot be created through signup"
-      })
-    }
+    const { name, email, password } = req.body
 
     const existingUser = await User.findOne({ email })
 
@@ -29,13 +30,12 @@ export const signup = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role,
-      department: role === "admin" ? department : null
+      role: "student"
     })
 
     res.status(201).json({
       message: "Signup successful",
-      user
+      user: getPublicUser(user)
     })
 
   } catch (error) {
@@ -74,8 +74,18 @@ export const login = async (req, res) => {
       })
     }
 
+    if (user.role === "admin" && user.adminProvisioned !== true) {
+      return res.status(403).json({
+        message: "Admin account requires re-provisioning by a superadmin"
+      })
+    }
+
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      {
+        id: user._id,
+        role: user.role,
+        adminProvisioned: user.adminProvisioned === true
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     )
@@ -89,7 +99,66 @@ export const login = async (req, res) => {
 
     res.json({
       message: "Login successful",
-      user
+      user: getPublicUser(user)
+    })
+
+  } catch (error) {
+
+    console.log(error)
+
+    res.status(500).json({
+      message: "Server error"
+    })
+
+  }
+
+}
+
+export const createAdmin = async (req, res) => {
+
+  try {
+
+    const { name, email, password, department } = req.body
+    const allowedDepartments = [
+      "maintenance",
+      "hostel",
+      "academic",
+      "canteen",
+      "student welfare",
+      "administration"
+    ]
+    const normalizedDepartment = typeof department === "string"
+      ? department.toLowerCase().trim()
+      : ""
+
+    if (!allowedDepartments.includes(normalizedDepartment)) {
+      return res.status(400).json({
+        message: "Invalid department"
+      })
+    }
+
+    const existingUser = await User.findOne({ email })
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User already exists"
+      })
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: "admin",
+      adminProvisioned: true,
+      department: normalizedDepartment
+    })
+
+    res.status(201).json({
+      message: "Admin created successfully",
+      user: getPublicUser(user)
     })
 
   } catch (error) {
